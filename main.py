@@ -2,9 +2,15 @@ from ast import literal_eval as saferun
 import asyncio
 import discord
 from discord.ext import commands
+import dotenv
 from numpy import safe_eval as safeeval
 import pymongo
 from pymongo import MongoClient
+import os
+import dotenv
+
+dotenv.load_dotenv()
+TOKEN = os.getenv("TOKEN")
 
 prefix = "py "
 intents = discord.Intents().all()
@@ -71,4 +77,4 @@ async def on_start_error(ctx, error):
         await ctx.channel.send(embed=embed)
 
 
-bot.run("OTU4NTYwOTQwMDY3MDA4NTQz.YkPHcQ.MTB-01GM3M-zIOCxTBb1iggrQv0")
+bot.run(TOKEN)
