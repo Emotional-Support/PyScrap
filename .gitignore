@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 #Extra:
-.test.py
+.loessbullshit.py
+.scripting.py
