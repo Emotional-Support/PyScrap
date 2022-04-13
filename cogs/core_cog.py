@@ -3,6 +3,8 @@ from disnake.ext import commands
 import asyncio
 import re
 from main import cluster, db, collection, ORANGE, MongoClient
+from disnake.ui import Select, View
+from disnake import SelectOption
 
 valid_reacts = ["✅", "❎"]
 valid_reacts2 = ["😶", "😮", "😎"]
@@ -25,7 +27,7 @@ class CoreCog(commands.Cog):
 I'm PyScrap! A disnake Bot Created To Help People Learn Python.
 You Can View My Commands With `py help`.
 
-- Developed By `Emotional Support#3719`.
+- Developed By `Emotional Support#3719` and `EnderWeeperr#2249`.
         """,
                 color=ORANGE,
             )
@@ -57,94 +59,96 @@ You Can View My Commands With `py help`.
 
     @commands.command()
     async def start(self, ctx: commands.Context):
-        embed = disnake.Embed(
-            title="Begin Your Python Journey With PyScrap!",
-            description="""Ever wanted to learn python, but never knew where to start? 
-well pyscrap is the bot for you! With this course you'll be a python expert in no time!
-React to this message to continue :sparkling_heart:
-""",
-            color=0xFF5733,
-        )
-        bot_msg1 = await ctx.channel.send(embed=embed)
-        await bot_msg1.add_reaction("✅")
-        await bot_msg1.add_reaction("❎")
 
-        def check(reaction, user):
-            return user == ctx.author and str(reaction.emoji) in valid_reacts
+        user_db = self.collection.find_one({"_id": ctx.author.id})
+        if user_db is not None:
+            if user_db["level"] == 0:
 
-        try:
-            reaction, user = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
-        except asyncio.TimeoutError:
-            embed = disnake.Embed(
-                title="Timed Out!",
-                description="You Have Taken Too Long To Reply. Closing This Session.",
-                color=ORANGE,
-            )
-            await ctx.channel.send(embed=embed)
-        else:
-            if user == ctx.author:
-                if str(reaction.emoji) == "✅":
-                    user_db = self.collection.find_one({"_id": ctx.author.id})
-                    if user_db is None:
-                        self.collection.insert_one({"_id": ctx.author.id, "level": 0})
-                        user_db = self.collection.find_one({"_id": ctx.author.id})
-
-                    if user_db["level"] == 0:
-                        embed = disnake.Embed(title="Welcome!", description="Time To Begin Your Python Journey!", color=ORANGE)
-                        embed.add_field(
-                            name="How much experience do you have with python?",
-                            value="""
-😶 - No knowledge of python at all
-😮 - Slight experience
-😎 - I know basic python
+                embed = disnake.Embed(
+                    title="Begin Your Python Journey With PyScrap!",
+                    description="""Ever wanted to learn python, but never knew where to start? 
+        well pyscrap is the bot for you! With this course you'll be a python expert in no time!
+        React to this message to continue :sparkling_heart:
         """,
-                        )
-                        bot_msg2 = await ctx.channel.send(embed=embed)
-                        await bot_msg2.add_reaction("😶")
-                        await bot_msg2.add_reaction("😮")
-                        await bot_msg2.add_reaction("😎")
+                    color=ORANGE,
+                )
+                bot_msg1 = await ctx.channel.send(embed=embed)
+                await bot_msg1.add_reaction("✅")
+                await bot_msg1.add_reaction("❎")
 
-                        def check2(reaction, user):
-                            return user == ctx.author and str(reaction.emoji) in valid_reacts2
+                def check(reaction, user):
+                    return user == ctx.author and str(reaction.emoji) in valid_reacts
 
-                        try:
-                            reaction, user = await self.bot.wait_for("reaction_add", timeout=60.0, check=check2)
-                        except asyncio.TimeoutError:
-                            embed = disnake.Embed(
-                                title="Timed Out!",
-                                description="You Have Taken Too Long To Reply. Closing This Session.",
-                                color=0xFF5733,
-                            )
-                            await ctx.channel.send(embed=embed)
-                        else:
-                            if user == ctx.author:
-                                embed = disnake.Embed(
-                                    title="Congrats!",
-                                    description="You have finished the tutorial! Yype `py course` to begin the course.",
-                                    color=ORANGE,
-                                )
-                                if str(reaction.emoji) == "😶":
-                                    self.collection.update_one({"_id": ctx.author.id}, {"$set": {"level": 1}})
-                                elif str(reaction.emoji) == "😮":
-                                    self.collection.update_one({"_id": ctx.author.id}, {"$set": {"level": 10}})
-                                elif str(reaction.emoji) == "😎":
-                                    self.collection.update_one({"_id": ctx.author.id}, {"$set": {"level": 15}})
-                                await ctx.channel.send(embed=embed)
-                    else:
-                        embed = disnake.Embed(
-                            title="Oops!",
-                            description="""
-    You've already finished the tutorial :D
-    Run `py course` to begin/resume the course!
-    """,
-                            color=ORANGE,
-                        )
-                        await ctx.channel.send(embed=embed)
-                else:
+                try:
+                    reaction, user = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
+                except asyncio.TimeoutError:
                     embed = disnake.Embed(
-                        title="Goodbye :pensive:", description="We Hope You Can Join Us Next Time!", color=ORANGE
+                        title="Timed Out!",
+                        description="You Have Taken Too Long To Reply. Closing This Session.",
+                        color=ORANGE,
                     )
                     await ctx.channel.send(embed=embed)
+                else:
+                    if user == ctx.author:
+                        if str(reaction.emoji) == "✅":
+                            user_db = self.collection.find_one({"_id": ctx.author.id})
+                            if user_db is None:
+                                self.collection.insert_one({"_id": ctx.author.id, "level": 0})
+                                user_db = self.collection.find_one({"_id": ctx.author.id})
+
+                            if user_db["level"] == 0:
+                                embed = disnake.Embed(
+                                    title="Welcome!",
+                                    description="""
+Time To Begin Your Python Journey!
+How much experience do you have with python?       
+        """,
+                                    color=ORANGE,
+                                )
+
+                                select = Select(
+                                    placeholder="Choose your skill level",
+                                    options=[
+                                        SelectOption(label="No knowledge of python at all", value="noob", emoji="😶"),
+                                        SelectOption(label="Slight experience with python", value="beginner", emoji="😮"),
+                                        SelectOption(label="I know basic python", value="novice", emoji="😎"),
+                                    ],
+                                )
+
+                                async def callback(interaction: disnake.Interaction):
+                                    if select.values[0] == "noob":
+                                        self.collection.update_one({"_id": ctx.author.id}, {"$set": {"score": 1}})
+                                    elif select.values[0] == "beginner":
+                                        self.collection.update_one({"_id": ctx.author.id}, {"$set": {"score": 15}})
+                                    elif select.values[0] == "novice":
+                                        self.collection.update_one({"_id": ctx.author.id}, {"$set": {"score": 10}})
+
+                                    embed = disnake.Embed(
+                                        title="Congrats!",
+                                        description="You have finished the tutorial! Yype `py course` to begin the course.",
+                                        color=ORANGE,
+                                    )
+                                    await interaction.response.send_message(embed=embed)
+
+                                select.callback = callback
+                                view = View()
+                                view.add_item(select)
+                                await ctx.channel.send(view=view, embed=embed)
+                        else:
+                            embed = disnake.Embed(
+                                title="Goodbye :pensive:", description="We Hope You Can Join Us Next Time!", color=ORANGE
+                            )
+                            await ctx.channel.send(embed=embed)
+            else:
+                embed = disnake.Embed(
+                    title="Oops!",
+                    description="""
+You've already finished the tutorial :D
+Run `py course` to begin/resume the course!
+""",
+                    color=ORANGE,
+                )
+                await ctx.channel.send(embed=embed)
 
 
 def setup(bot: commands.Bot):
