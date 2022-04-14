@@ -55,17 +55,63 @@ async def purge(ctx: commands.Context, amt: int):
 
 
 @bot.command()
-async def test1(ctx: commands.Context):
-    embed = disnake.Embed(title="Saif", description="Saif is a very naughty boy", color=0xFF5733)
-    embed.set_author(name=ctx.author, icon_url=ctx.author.display_avatar)
-    await ctx.channel.send(embed=embed)
-
-
-@bot.command()
 @commands.has_permissions(manage_messages=True)
 async def clear(ctx: commands.Context):
     cluster["discord"]["user_info"].delete_many({})
     await ctx.channel.send("Cleared Document!")
+
+
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def poll(ctx: commands.Context, *, options: str):
+
+    dict = {}
+    total = 0
+    list_ch = options.split("/")
+    question = list_ch[0]
+    list_ch.remove(question)
+    choices = list_ch[0].split(",")
+
+    embed = disnake.Embed(title=question, color=ORANGE)
+
+    for ch in choices:
+        embed.add_field(name=f"{ch}: ", value=f"{0}%", inline=False)
+        dict.update({ch: 0})
+
+    option_list = []
+
+    select = Select(
+        placeholder="Choose An Option",
+        options=option_list,
+    )
+
+    for op in choices:
+        option_list.append(SelectOption(label=op, value=op))
+
+    async def callback(interaction: disnake.Interaction):
+
+        nonlocal total
+        total += 1
+        dict[select.values[0]] += 1
+
+        total_num = 0
+
+        for l in dict.values():
+            total_num += l
+
+        embed = disnake.Embed(title=question, color=ORANGE)
+
+        for ch in choices:
+            percentage = dict[ch] // total_num * 100
+            embed.add_field(name=f"{ch}:    ", value=f"{percentage}%", inline=False)
+
+        await msg.edit(embed=embed)
+        await interaction.response.defer()
+
+    select.callback = callback
+    view = View()
+    view.add_item(select)
+    msg = await ctx.channel.send(embed=embed, view=view)
 
 
 bot_cogs = ["cogs.core_cog", "cogs.course_cog"]

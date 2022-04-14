@@ -1,0 +1,7 @@
+disnake
+pymongo
+dnspython
+python-dotenv
+asyncio
+re
+os
